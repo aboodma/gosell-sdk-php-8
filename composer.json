@@ -1,7 +1,9 @@
 {
     "name": "aboodma/gosell-sdk-php-8",
     "description": "Tap Payemnt PHP",
+    "version": "0.0.1",
     "type": "library",
+    
     "require": {
         "php": ">=8.0",
         "guzzle/guzzle": "*"
