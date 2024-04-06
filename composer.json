@@ -1,40 +1,35 @@
 {
     "name": "aboodma/gosell-sdk-php-8",
-    "license": "MIT",
-    "minimum-stability": "stable",
-    "authors": [
-        {
-            "name": "Waqas Tanoli",
-            "email": "w.tanoli@tap.company"
-        }
-    ],
+    "description": "Tap Payemnt PHP",
+    "type": "library",
     "require": {
-    	 "php": ">=8.0",
-        "guzzlehttp/guzzle": "^7.3"
+        "php": ">=8.0",
+        "guzzle/guzzle": "*"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "3.*",
-        "phpunit/phpunit": "^9.0",
-        "php-coveralls/php-coveralls": "^2.4"
+        "phpunit/phpunit": "*",
+        "php-coveralls/php-coveralls": "2.4"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {}
     },
     "autoload": {
-	    "psr-4": {
-	      "TapPayments\\": "src/"
-	    },
-         "classmap": [
-          "src/GoSell.php",
-          "src/Customers.php",
-          "src/Authorize.php",
-          "src/Charges.php",
-          "src/Refunds.php"
-        ]
-	  },
-  "autoload-dev": {
-    "psr-4": {
-      "TapPayments\\": [
-        "tests/",
-        "tests/TapPayments/"
-      ]
-    }
-  }
+        "psr-4": {
+            "Aboodma\\GosellSdkPhp8\\": "src/"
+        },
+        "classmap": ["src/GoSell.php", "src/Customers.php", "src/Authorize.php", "src/Charges.php", "src/Refunds.php"]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TAboodma\\GosellSdkPhp8\\": ["tests/", "tests/TapPayments/"]
+        }
+    },
+    "authors": [
+        {
+            "name": "Abdulrahman Mardinli",
+            "email": "34406204+aboodma@users.noreply.github.com"
+        }
+    ]
 }

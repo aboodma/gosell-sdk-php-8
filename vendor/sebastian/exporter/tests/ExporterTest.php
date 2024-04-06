@@ -22,27 +22,20 @@ use function preg_replace;
 use function range;
 use Error;
 use Exception;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
+use PHPUnit\Framework\Attributes\Small;
 use PHPUnit\Framework\TestCase;
 use SebastianBergmann\RecursionContext\Context;
 use SplObjectStorage;
 use stdClass;
 
-/**
- * @covers SebastianBergmann\Exporter\Exporter
- */
-class ExporterTest extends TestCase
+#[CoversClass(Exporter::class)]
+#[Small]
+final class ExporterTest extends TestCase
 {
-    /**
-     * @var Exporter
-     */
-    private $exporter;
-
-    protected function setUp(): void
-    {
-        $this->exporter = new Exporter;
-    }
-
-    public function exportProvider(): array
+    public static function exportProvider(): array
     {
         $obj2      = new stdClass;
         $obj2->foo = 'bar';
@@ -50,9 +43,9 @@ class ExporterTest extends TestCase
         $obj3 = (object) [1, 2, "Test\r\n", 4, 5, 6, 7, 8];
 
         $obj = new stdClass;
-        //@codingStandardsIgnoreStart
+        // @codingStandardsIgnoreStart
         $obj->null = null;
-        //@codingStandardsIgnoreEnd
+        // @codingStandardsIgnoreEnd
         $obj->boolean     = true;
         $obj->integer     = 1;
         $obj->double      = 1.2;
@@ -87,20 +80,20 @@ class ExporterTest extends TestCase
             'export stream'                 => [fopen('php://memory', 'r'), 'resource(%d) of type (stream)'],
             'export stream (closed)'        => [$resource, 'resource (closed)'],
             'export numeric string'         => ['1', "'1'"],
-            'export multidimentional array' => [[[1, 2, 3], [3, 4, 5]],
+            'export multidimensional array' => [[[1, 2, 3], [3, 4, 5]],
                 <<<'EOF'
-Array &0 (
-    0 => Array &1 (
-        0 => 1
-        1 => 2
-        2 => 3
-    )
-    1 => Array &2 (
-        0 => 3
-        1 => 4
-        2 => 5
-    )
-)
+Array &0 [
+    0 => Array &1 [
+        0 => 1,
+        1 => 2,
+        2 => 3,
+    ],
+    1 => Array &2 [
+        0 => 3,
+        1 => 4,
+        2 => 5,
+    ],
+]
 EOF
             ],
             // \n\r and \r is converted to \n
@@ -119,15 +112,15 @@ long\n\r
 text'
 EOF
             ],
-            'export empty stdclass'     => [new stdClass, 'stdClass Object &%x ()'],
+            'export empty stdclass'     => [new stdClass, 'stdClass Object #%d ()'],
             'export non empty stdclass' => [$obj,
                 <<<'EOF'
-stdClass Object &%x (
-    'null' => null
-    'boolean' => true
-    'integer' => 1
-    'double' => 1.2
-    'string' => '1'
+stdClass Object #%d (
+    'null' => null,
+    'boolean' => true,
+    'integer' => 1,
+    'double' => 1.2,
+    'string' => '1',
     'text' => 'this\n
 is\n
 a\n
@@ -138,44 +131,44 @@ very\n
 very\n
 very\r
 long\n\r
-text'
-    'object' => stdClass Object &%x (
-        'foo' => 'bar'
-    )
-    'objectagain' => stdClass Object &%x
-    'array' => Array &%d (
-        'foo' => 'bar'
-    )
-    'self' => stdClass Object &%x
+text',
+    'object' => stdClass Object #%d (
+        'foo' => 'bar',
+    ),
+    'objectagain' => stdClass Object #%d,
+    'array' => Array &%d [
+        'foo' => 'bar',
+    ],
+    'self' => stdClass Object #%d,
 )
 EOF
             ],
-            'export empty array'      => [[], 'Array &%d ()'],
+            'export empty array'      => [[], 'Array &%d []'],
             'export splObjectStorage' => [$storage,
                 <<<'EOF'
-SplObjectStorage Object &%x (
-    'foo' => stdClass Object &%x (
-        'foo' => 'bar'
-    )
-    '%x' => Array &0 (
-        'obj' => stdClass Object &%x
-        'inf' => null
-    )
+SplObjectStorage Object #%d (
+    'foo' => stdClass Object #%d (
+        'foo' => 'bar',
+    ),
+    'Object #%d' => Array &0 [
+        'obj' => stdClass Object #%d,
+        'inf' => null,
+    ],
 )
 EOF
             ],
             'export stdClass with numeric properties' => [$obj3,
                 <<<'EOF'
-stdClass Object &%x (
-    0 => 1
-    1 => 2
+stdClass Object #%d (
+    0 => 1,
+    1 => 2,
     2 => 'Test\r\n
-'
-    3 => 4
-    4 => 5
-    5 => 6
-    6 => 7
-    7 => 8
+',
+    3 => 4,
+    4 => 5,
+    5 => 6,
+    6 => 7,
+    7 => 8,
 )
 EOF
             ],
@@ -184,7 +177,7 @@ EOF
                 'Binary String: 0x000102030405',
             ],
             [
-                implode('', array_map('chr', range(0x0e, 0x1f))),
+                implode('', array_map('chr', range(0x0E, 0x1F))),
                 'Binary String: 0x0e0f101112131415161718191a1b1c1d1e1f',
             ],
             [
@@ -198,40 +191,91 @@ EOF
             'export Exception without trace' => [
                 new Exception('The exception message', 42),
                 <<<'EOF'
-Exception Object &%x (
-    'message' => 'The exception message'
-    'string' => ''
-    'code' => 42
-    'file' => '%s/tests/ExporterTest.php'
-    'line' => %d
-    'previous' => null
+Exception Object #%d (
+    'message' => 'The exception message',
+    'string' => '',
+    'code' => 42,
+    'file' => '%s/tests/ExporterTest.php',
+    'line' => %d,
+    'previous' => null,
 )
 EOF
             ],
             'export Error without trace' => [
                 new Error('The exception message', 42),
                 <<<'EOF'
-Error Object &%x (
-    'message' => 'The exception message'
-    'string' => ''
-    'code' => 42
-    'file' => '%s/tests/ExporterTest.php'
-    'line' => %d
-    'previous' => null
+Error Object #%d (
+    'message' => 'The exception message',
+    'string' => '',
+    'code' => 42,
+    'file' => '%s/tests/ExporterTest.php',
+    'line' => %d,
+    'previous' => null,
 )
 EOF
             ],
         ];
     }
 
-    /**
-     * @dataProvider exportProvider
-     */
+    public static function shortenedExportProvider(): array
+    {
+        $obj      = new stdClass;
+        $obj->foo = 'bar';
+
+        $array = [
+            'foo' => 'bar',
+        ];
+
+        return [
+            'shortened export null'            => [null, 'null'],
+            'shortened export boolean true'    => [true, 'true'],
+            'shortened export integer 1'       => [1, '1'],
+            'shortened export float 1.0'       => [1.0, '1.0'],
+            'shortened export float 1.2'       => [1.2, '1.2'],
+            'shortened export float 1 / 3'     => [1 / 3, '0.3333333333333333'],
+            'shortened export float 1 - 2 / 3' => [1 - 2 / 3, '0.33333333333333337'],
+            'shortened export numeric string'  => ['1', "'1'"],
+            // \n\r and \r is converted to \n
+            'shortened export multilinestring'    => ["this\nis\na\nvery\nvery\nvery\nvery\nvery\nvery\rlong\n\rtext", "'this\\nis\\na\\nvery\\nvery\\nvery...\\rtext'"],
+            'shortened export empty stdClass'     => [new stdClass, 'stdClass Object ()'],
+            'shortened export not empty stdClass' => [$obj, 'stdClass Object (...)'],
+            'shortened export empty array'        => [[], '[]'],
+            'shortened export not empty array'    => [$array, '[...]'],
+        ];
+    }
+
+    public static function provideNonBinaryMultibyteStrings(): array
+    {
+        return [
+            [implode('', array_map('chr', range(0x09, 0x0D))), 9],
+            [implode('', array_map('chr', range(0x20, 0x7F))), 96],
+            [implode('', array_map('chr', range(0x80, 0xFF))), 128],
+        ];
+    }
+
+    public static function shortenedRecursiveExportProvider(): array
+    {
+        return [
+            'export null'                   => [[null], 'null'],
+            'export boolean true'           => [[true], 'true'],
+            'export boolean false'          => [[false], 'false'],
+            'export int 1'                  => [[1], '1'],
+            'export float 1.0'              => [[1.0], '1.0'],
+            'export float 1.2'              => [[1.2], '1.2'],
+            'export numeric string'         => [['1'], "'1'"],
+            'export with numeric array key' => [[2 => 1], '1'],
+            'export with assoc array key'   => [['foo' => 'bar'], '\'bar\''],
+            'export multidimensional array' => [[[1, 2, 3], [3, 4, 5]], '[1, 2, 3], [3, 4, 5]'],
+            'export object'                 => [[new stdClass], 'stdClass Object ()'],
+        ];
+    }
+
+    #[DataProvider('exportProvider')]
     public function testExport($value, $expected): void
     {
         $this->assertStringMatchesFormat(
             $expected,
-            $this->trimNewline($this->exporter->export($value))
+            $this->trimNewline((new Exporter)->export($value)),
         );
     }
 
@@ -256,13 +300,13 @@ EOF
         $array['self'] = &$array;
 
         $expected = <<<'EOF'
-Array &%d (
-    0 => 0
-    'null' => null
-    'boolean' => true
-    'integer' => 1
-    'double' => 1.2
-    'string' => '1'
+Array &%d [
+    0 => 0,
+    'null' => null,
+    'boolean' => true,
+    'integer' => 1,
+    'double' => 1.2,
+    'string' => '1',
     'text' => 'this\n
 is\n
 a\n
@@ -273,21 +317,21 @@ very\n
 very\n
 very\r
 long\n\r
-text'
-    'object' => stdClass Object &%x (
-        'foo' => 'bar'
-    )
-    'objectagain' => stdClass Object &%x
-    'array' => Array &%d (
-        'foo' => 'bar'
-    )
-    'self' => Array &%d (
-        0 => 0
-        'null' => null
-        'boolean' => true
-        'integer' => 1
-        'double' => 1.2
-        'string' => '1'
+text',
+    'object' => stdClass Object #%d (
+        'foo' => 'bar',
+    ),
+    'objectagain' => stdClass Object #%d,
+    'array' => Array &%d [
+        'foo' => 'bar',
+    ],
+    'self' => Array &%d [
+        0 => 0,
+        'null' => null,
+        'boolean' => true,
+        'integer' => 1,
+        'double' => 1.2,
+        'string' => '1',
         'text' => 'this\n
 is\n
 a\n
@@ -298,64 +342,33 @@ very\n
 very\n
 very\r
 long\n\r
-text'
-        'object' => stdClass Object &%x
-        'objectagain' => stdClass Object &%x
-        'array' => Array &%d (
-            'foo' => 'bar'
-        )
-        'self' => Array &%d
-    )
-)
+text',
+        'object' => stdClass Object #%d,
+        'objectagain' => stdClass Object #%d,
+        'array' => Array &%d [
+            'foo' => 'bar',
+        ],
+        'self' => Array &%d,
+    ],
+]
 EOF;
 
         $this->assertStringMatchesFormat(
             $expected,
-            $this->trimNewline($this->exporter->export($array))
+            $this->trimNewline((new Exporter)->export($array)),
         );
     }
 
-    public function shortenedExportProvider(): array
-    {
-        $obj      = new stdClass;
-        $obj->foo = 'bar';
-
-        $array = [
-            'foo' => 'bar',
-        ];
-
-        return [
-            'shortened export null'            => [null, 'null'],
-            'shortened export boolean true'    => [true, 'true'],
-            'shortened export integer 1'       => [1, '1'],
-            'shortened export float 1.0'       => [1.0, '1.0'],
-            'shortened export float 1.2'       => [1.2, '1.2'],
-            'shortened export float 1 / 3'     => [1 / 3, '0.3333333333333333'],
-            'shortened export float 1 - 2 / 3' => [1 - 2 / 3, '0.33333333333333337'],
-            'shortened export numeric string'  => ['1', "'1'"],
-            // \n\r and \r is converted to \n
-            'shortened export multilinestring'    => ["this\nis\na\nvery\nvery\nvery\nvery\nvery\nvery\rlong\n\rtext", "'this\\nis\\na\\nvery\\nvery\\nvery...\\rtext'"],
-            'shortened export empty stdClass'     => [new stdClass, 'stdClass Object ()'],
-            'shortened export not empty stdClass' => [$obj, 'stdClass Object (...)'],
-            'shortened export empty array'        => [[], 'Array ()'],
-            'shortened export not empty array'    => [$array, 'Array (...)'],
-        ];
-    }
-
-    /**
-     * @dataProvider shortenedExportProvider
-     */
+    #[DataProvider('shortenedExportProvider')]
     public function testShortenedExport($value, $expected): void
     {
         $this->assertSame(
             $expected,
-            $this->trimNewline($this->exporter->shortenedExport($value))
+            $this->trimNewline((new Exporter)->shortenedExport($value)),
         );
     }
 
-    /**
-     * @requires extension mbstring
-     */
+    #[RequiresPhpExtension('mbstring')]
     public function testShortenedExportForMultibyteCharacters(): void
     {
         $oldMbLanguage = mb_language();
@@ -366,7 +379,7 @@ EOF;
         try {
             $this->assertSame(
                 "'いろはにほへとちりぬるをわかよたれそつねならむうゐのおくや...しゑひもせす'",
-                $this->trimNewline($this->exporter->shortenedExport('いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす'))
+                $this->trimNewline((new Exporter)->shortenedExport('いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす')),
             );
         } catch (Exception $e) {
             mb_internal_encoding($oldMbInternalEncoding);
@@ -379,29 +392,72 @@ EOF;
         mb_language($oldMbLanguage);
     }
 
-    public function provideNonBinaryMultibyteStrings(): array
+    public function testEnumExport(): void
     {
-        return [
-            [implode('', array_map('chr', range(0x09, 0x0d))), 9],
-            [implode('', array_map('chr', range(0x20, 0x7f))), 96],
-            [implode('', array_map('chr', range(0x80, 0xff))), 128],
-        ];
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleEnum Enum #%d (Value)',
+            $this->trimNewline((new Exporter)->export(ExampleEnum::Value)),
+        );
     }
 
-    /**
-     * @dataProvider provideNonBinaryMultibyteStrings
-     */
+    public function testStringBackedEnumExport(): void
+    {
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleStringBackedEnum Enum #%d (Value, \'value\')',
+            $this->trimNewline((new Exporter)->export(ExampleStringBackedEnum::Value)),
+        );
+    }
+
+    public function testIntegerBackedEnumExport(): void
+    {
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleIntegerBackedEnum Enum #%d (Value, 0)',
+            $this->trimNewline((new Exporter)->export(ExampleIntegerBackedEnum::Value)),
+        );
+    }
+
+    public function testEnumShortenedExport(): void
+    {
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleEnum Enum (Value)',
+            $this->trimNewline((new Exporter)->shortenedExport(ExampleEnum::Value)),
+        );
+    }
+
+    public function testStringBackedEnumShortenedExport(): void
+    {
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleStringBackedEnum Enum (Value, \'value\')',
+            $this->trimNewline((new Exporter)->shortenedExport(ExampleStringBackedEnum::Value)),
+        );
+    }
+
+    public function testIntegerBackedEnumShortenedExport(): void
+    {
+        // FIXME: Merge test into testExport once we drop support for PHP 8.0
+        $this->assertStringMatchesFormat(
+            'SebastianBergmann\Exporter\ExampleIntegerBackedEnum Enum (Value, 0)',
+            $this->trimNewline((new Exporter)->shortenedExport(ExampleIntegerBackedEnum::Value)),
+        );
+    }
+
+    #[DataProvider('provideNonBinaryMultibyteStrings')]
     public function testNonBinaryStringExport($value, $expectedLength): void
     {
         $this->assertMatchesRegularExpression(
             "~'.{{$expectedLength}}'\$~s",
-            $this->exporter->export($value)
+            (new Exporter)->export($value),
         );
     }
 
     public function testNonObjectCanBeReturnedAsArray(): void
     {
-        $this->assertEquals([true], $this->exporter->toArray(true));
+        $this->assertEquals([true], (new Exporter)->toArray(true));
     }
 
     public function testIgnoreKeysInValue(): void
@@ -410,43 +466,26 @@ EOF;
         $array             = [];
         $array["\0gcdata"] = '';
 
-        $this->assertEquals([], $this->exporter->toArray((object) $array));
+        $this->assertEquals([], (new Exporter)->toArray((object) $array));
     }
 
-    /**
-     * @dataProvider shortenedRecursiveExportProvider
-     */
+    #[DataProvider('shortenedRecursiveExportProvider')]
     public function testShortenedRecursiveExport(array $value, string $expected): void
     {
-        $this->assertEquals($expected, $this->exporter->shortenedRecursiveExport($value));
-    }
-
-    public function shortenedRecursiveExportProvider(): array
-    {
-        return [
-            'export null'                   => [[null], 'null'],
-            'export boolean true'           => [[true], 'true'],
-            'export boolean false'          => [[false], 'false'],
-            'export int 1'                  => [[1], '1'],
-            'export float 1.0'              => [[1.0], '1.0'],
-            'export float 1.2'              => [[1.2], '1.2'],
-            'export numeric string'         => [['1'], "'1'"],
-            'export with numeric array key' => [[2 => 1], '1'],
-            'export with assoc array key'   => [['foo' => 'bar'], '\'bar\''],
-            'export multidimentional array' => [[[1, 2, 3], [3, 4, 5]], 'array(1, 2, 3), array(3, 4, 5)'],
-            'export object'                 => [[new stdClass], 'stdClass Object ()'],
-        ];
+        $this->assertEquals($expected, (new Exporter)->shortenedRecursiveExport($value));
     }
 
     public function testShortenedRecursiveOccurredRecursion(): void
     {
         $recursiveValue = [1];
-        $context        = new Context();
+        $context        = new Context;
+
+        /* @noinspection UnusedFunctionResultInspection */
         $context->add($recursiveValue);
 
         $value = [$recursiveValue];
 
-        $this->assertEquals('*RECURSION*', $this->exporter->shortenedRecursiveExport($value, $context));
+        $this->assertEquals('*RECURSION*', (new Exporter)->shortenedRecursiveExport($value, $context));
     }
 
     private function trimNewline(string $string): string
